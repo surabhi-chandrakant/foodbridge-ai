@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FoodBridge AI — Waste to Nourishment</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f0a;
+    --surface: #111811;
+    --surface2: #182018;
+    --border: #1e2a1e;
+    --accent: #5aff6e;
+    --accent2: #ff6b35;
+    --accent3: #ffd166;
+    --text: #e8f0e8;
+    --text-muted: #6b8a6b;
+    --danger: #ff4444;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 40px; border-bottom: 1px solid var(--border);
+    background: rgba(10,15,10,0.9); position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .nav-tabs { display: flex; gap: 4px; background: var(--surface); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+  .nav-tab { padding: 8px 18px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 14px; transition: all 0.2s; }
+  .nav-tab.active { background: var(--accent); color: #0a0f0a; font-weight: 600; }
+  .nav-tab:hover:not(.active) { color: var(--text); background: var(--surface2); }
+  .api-badge { font-size: 11px; background: rgba(90,255,110,0.1); color: var(--accent); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(90,255,110,0.2); }
+
+  /* LAYOUT */
+  main { padding: 32px 40px; max-width: 1280px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STATS ROW */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 24px; position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), transparent); }
+  .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--accent); }
+  .stat-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* TWO-COL */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+
+  /* CARD */
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; margin-bottom: 24px;
+  }
+  .card-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .card-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  input, select, textarea {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s; outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--bg); }
+
+  /* BUTTONS */
+  .btn { padding: 11px 24px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+  .btn-primary { background: var(--accent); color: #0a0f0a; }
+  .btn-primary:hover { background: #4de860; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(255,68,68,0.15); color: var(--danger); border: 1px solid rgba(255,68,68,0.2); }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid rgba(30,42,30,0.5); }
+  tr:hover td { background: var(--surface2); }
+
+  /* BADGES */
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-green { background: rgba(90,255,110,0.12); color: var(--accent); border: 1px solid rgba(90,255,110,0.2); }
+  .badge-orange { background: rgba(255,107,53,0.12); color: var(--accent2); border: 1px solid rgba(255,107,53,0.2); }
+  .badge-yellow { background: rgba(255,209,102,0.12); color: var(--accent3); border: 1px solid rgba(255,209,102,0.2); }
+  .badge-red { background: rgba(255,68,68,0.12); color: var(--danger); border: 1px solid rgba(255,68,68,0.2); }
+
+  /* AI RESULT BOX */
+  .ai-result {
+    background: rgba(90,255,110,0.05); border: 1px solid rgba(90,255,110,0.15);
+    border-radius: 8px; padding: 14px 16px; margin-top: 14px;
+    font-size: 13px; line-height: 1.7; color: #c8e8c8; display: none;
+  }
+  .ai-result.show { display: block; }
+  .ai-label { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; font-weight: 600; }
+
+  /* PREDICT SECTION */
+  .predict-output {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px;
+  }
+  .predict-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .predict-item-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+  .predict-item-value { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent3); }
+
+  /* MATCH CARDS */
+  .match-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+  .match-card:hover { border-color: var(--accent); }
+  .match-icon { width: 40px; height: 40px; border-radius: 8px; background: rgba(90,255,110,0.1); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .match-details { flex: 1; }
+  .match-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .match-meta { font-size: 12px; color: var(--text-muted); }
+  .match-arrow { color: var(--accent); font-size: 20px; align-self: center; }
+
+  /* LOADING SPINNER */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(90,255,110,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* BOTPRESS INFO */
+  .botpress-card { background: linear-gradient(135deg, rgba(90,255,110,0.05), rgba(255,107,53,0.05)); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+  .endpoint-row { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-family: monospace; font-size: 13px; color: var(--accent); margin-bottom: 10px; }
+  .method-badge { background: var(--accent2); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-family: 'DM Sans', sans-serif; letter-spacing: 1px; }
+  .method-get { background: var(--accent); color: #0a0f0a; }
+  .step-list { counter-reset: steps; list-style: none; }
+  .step-list li { counter-increment: steps; padding: 12px 0 12px 48px; position: relative; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .step-list li:last-child { border-bottom: none; }
+  .step-list li::before { content: counter(steps); position: absolute; left: 0; top: 12px; width: 28px; height: 28px; background: rgba(90,255,110,0.15); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; }
+  .code-block { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-family: monospace; font-size: 12px; color: #c8e8c8; overflow-x: auto; margin-top: 8px; line-height: 1.6; }
+  .hljs-key { color: var(--accent3); }
+  .hljs-val { color: #88d4ff; }
+
+  /* PULSE DOT */
+  .live-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* NOTIFICATION */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; font-size: 13px; z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.3s; max-width: 320px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-icon { color: var(--accent); font-size: 16px; margin-right: 8px; }
+
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+  .page-sub { color: var(--text-muted); font-size: 14px; }
+  .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+  .empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Food<span>Bridge</span> AI</div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPage('dashboard')">Dashboard</button>
+    <button class="nav-tab" onclick="switchPage('donate')">Donate Food</button>
+    <button class="nav-tab" onclick="switchPage('request')">NGO Request</button>
+    <button class="nav-tab" onclick="switchPage('predict')">AI Predict</button>
+    <button class="nav-tab" onclick="switchPage('matches')">Matches</button>
+    <button class="nav-tab" onclick="switchPage('botpress')">Botpress Setup</button>
+  </nav>
+  <div class="api-badge"><span class="live-dot"></span>Gemini AI Active</div>
+</header>
+
+<main>
+
+<!-- DASHBOARD PAGE -->
+<div id="page-dashboard" class="page active">
+  <div class="page-header">
+    <div class="page-title">Live Operations Center</div>
+    <div class="page-sub">Real-time food redistribution across your network</div>
+  </div>
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total Donations</div><div class="stat-value" id="stat-donations">0</div><div class="stat-sub">Entries logged</div></div>
+    <div class="stat-card"><div class="stat-label">KG Donated</div><div class="stat-value" id="stat-kg">0</div><div class="stat-sub">Kilograms of food</div></div>
+    <div class="stat-card"><div class="stat-label">Matches Made</div><div class="stat-value" id="stat-matches">0</div><div class="stat-sub">Donor ↔ NGO pairs</div></div>
+    <div class="stat-card"><div class="stat-label">Meals Saved</div><div class="stat-value" id="stat-meals">0</div><div class="stat-sub">Estimated servings</div></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Recent Donations</div>
+      <table>
+        <thead><tr><th>Restaurant</th><th>Food</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody id="dash-donations"><tr><td colspan="4" class="empty-state">No donations yet</td></tr></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Recent NGO Requests</div>
+      <table>
+        <thead><tr><th>NGO</th><th>People</th><th>Location</th><th>Status</th></tr></thead>
+        <tbody id="dash-requests"><tr><td colspan="4" class="empty-state">No requests yet</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DONATE PAGE -->
+<div id="page-donate" class="page">
+  <div class="page-header">
+    <div class="page-title">Register Surplus Food</div>
+    <div class="page-sub">Gemini AI will analyze spoilage risk and auto-match with NGOs</div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Donation Details</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Restaurant Name</label><input id="d-name" placeholder="e.g. Spice Garden, Pune" /></div>
+        <div class="form-group"><label>Contact Number</label><input id="d-contact" placeholder="+91 98765 43210" /></div>
+        <div class="form-group"><label>Food Type</label><input id="d-food" placeholder="e.g. Rice, Dal, Sabzi" /></div>
+        <div class="form-group"><label>Quantity (kg)</label><input id="d-qty" type="number" placeholder="12" min="0.5" step="0.5" /></div>
+        <div class="form-group"><label>Prepared At (datetime)</label><input id="d-time" type="datetime-local" /></div>
+        <div class="form-group"><label>Location / Area</label><input id="d-loc" placeholder="e.g. Koregaon Park, Pune" /></div>
+      </div>
+      <br>
+      <button class="btn btn-primary" onclick="submitDonation()" id="donate-btn">Register Donation</button>
+      <div class="ai-result" id="donate-ai-result">
+        <div class="ai-label">🤖 Gemini AI Analysis</div>
+        <div id="donate-ai-text"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>All Donations</div>
+      <table>
+        <thead><tr><th>Restaurant</th><th>Food</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody id="all-donations-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- NGO REQUEST PAGE -->
+<div id="page-request" class="page">
+  <div class="page-header">
+    <div class="page-title">NGO Food Request</div>
+    <div class="page-sub">AI will match your request with the best available donation</div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Request Form</div>
+      <div class="form-grid">
+        <div class="form-group full"><label>NGO Name</label><input id="r-name" placeholder="e.g. Helping Hands Foundation" /></div>
+        <div class="form-group"><label>People to Feed</label><input id="r-people" type="number" placeholder="50" min="1" /></div>
+        <div class="form-group"><label>Location / Area</label><input id="r-loc" placeholder="e.g. Hadapsar, Pune" /></div>
+        <div class="form-group"><label>Contact Number</label><input id="r-contact" placeholder="+91 98765 43210" /></div>
+        <div class="form-group full"><label>Food Preference</label>
+          <select id="r-pref">
+            <option value="any">Any food is fine</option>
+            <option value="vegetarian">Vegetarian only</option>
+            <option value="non-vegetarian">Non-vegetarian</option>
+            <option value="rice-based">Rice-based meals</option>
+          </select>
+        </div>
+      </div>
+      <br>
+      <button class="btn btn-primary" onclick="submitRequest()" id="request-btn">Submit Request</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot" style="background:var(--accent2)"></span>Pending Requests</div>
+      <table>
+        <thead><tr><th>NGO</th><th>People</th><th>Location</th><th>Status</th></tr></thead>
+        <tbody id="all-requests-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PREDICT PAGE -->
+<div id="page-predict" class="page">
+  <div class="page-header">
+    <div class="page-title">AI Waste Prediction</div>
+    <div class="page-sub">Gemini predicts surplus food before it happens — so you can act early</div>
+  </div>
+  <div class="card" style="max-width:600px">
+    <div class="card-title"><span class="dot" style="background:var(--accent3)"></span>Predict Waste</div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Restaurant Name</label><input id="p-name" placeholder="e.g. Hotel Shreyas" /></div>
+      <div class="form-group"><label>Day of Week</label>
+        <select id="p-day">
+          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+          <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Meal Type</label>
+        <select id="p-meal">
+          <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Buffet Event</option>
+        </select>
+      </div>
+    </div>
+    <br>
+    <button class="btn btn-primary" onclick="runPrediction()" id="predict-btn">Run AI Prediction</button>
+    <div id="predict-output" style="display:none; margin-top:20px;">
+      <div class="ai-label">🤖 Gemini Prediction</div>
+      <div class="predict-output">
+        <div class="predict-item"><div class="predict-item-label">Predicted Waste</div><div class="predict-item-value" id="p-waste">—</div></div>
+        <div class="predict-item"><div class="predict-item-label">Confidence</div><div class="predict-item-value" id="p-conf">—</div></div>
+        <div class="predict-item"><div class="predict-item-label">Peak Hours</div><div class="predict-item-value" id="p-hours" style="font-size:14px;margin-top:4px;">—</div></div>
+        <div class="predict-item"><div class="predict-item-label">Suggestion</div><div class="predict-item-value" id="p-suggest" style="font-size:13px;margin-top:4px;color:var(--accent)">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MATCHES PAGE -->
+<div id="page-matches" class="page">
+  <div class="page-header">
+    <div class="page-title">Successful Matches</div>
+    <div class="page-sub">Donor ↔ NGO connections made by the system</div>
+  </div>
+  <div id="matches-container">
+    <div class="empty-state"><div class="empty-icon">🤝</div>No matches yet. Add donations and requests to trigger matching.</div>
+  </div>
+</div>
+
+<!-- BOTPRESS PAGE -->
+<div id="page-botpress" class="page">
+  <div class="page-header">
+    <div class="page-title">Botpress Integration Guide</div>
+    <div class="page-sub">Connect your Botpress chatbot to FoodBridge AI</div>
+  </div>
+  <div class="two-col">
+    <div class="botpress-card">
+      <div class="card-title"><span class="dot"></span>API Endpoints</div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">NGO submits request via chatbot</div>
+        <div class="endpoint-row"><span class="method-badge">POST</span>/botpress-webhook</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;margin-top:16px">Get available donations</div>
+        <div class="endpoint-row"><span class="method-badge method-get" style="background:var(--accent);color:#0a0f0a">GET</span>/donations</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;margin-top:16px">Predict waste (GET with params)</div>
+        <div class="endpoint-row"><span class="method-badge method-get" style="background:var(--accent);color:#0a0f0a">GET</span>/predict-waste?restaurant=X&day=Y&meal_type=Z</div>
+      </div>
+      <div class="card-title" style="margin-top:24px"><span class="dot" style="background:var(--accent3)"></span>Webhook Payload (POST)</div>
+      <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span class="hljs-key">"ngo_name"</span>: <span class="hljs-val">"Helping Hands"</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"people_count"</span>: <span class="hljs-val">50</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"location"</span>: <span class="hljs-val">"Hadapsar, Pune"</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"contact"</span>: <span class="hljs-val">"+91 98765 43210"</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"food_preference"</span>: <span class="hljs-val">"vegetarian"</span><br>
+}
+      </div>
+      <div class="card-title" style="margin-top:24px"><span class="dot" style="background:var(--accent2)"></span>Response Format</div>
+      <div class="code-block">
+{<br>
+&nbsp;&nbsp;<span class="hljs-key">"matched"</span>: <span class="hljs-val">true</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"restaurant"</span>: <span class="hljs-val">"Spice Garden"</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"food"</span>: <span class="hljs-val">"Rice and Dal"</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"quantity_kg"</span>: <span class="hljs-val">15</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"location"</span>: <span class="hljs-val">"Koregaon Park"</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"contact"</span>: <span class="hljs-val">"+91 ..."</span>,<br>
+&nbsp;&nbsp;<span class="hljs-key">"message"</span>: <span class="hljs-val">"Great news! ..."</span><br>
+}
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Setup Steps in Botpress</div>
+        <ol class="step-list">
+          <li>Create a new bot in <strong>Botpress Cloud</strong> and open the Flow builder</li>
+          <li>Add an <strong>Execute Code</strong> node. Collect NGO name, people count, location, contact via bot messages</li>
+          <li>In the Execute Code node, make a POST request to your backend URL + <code>/botpress-webhook</code> with the collected data</li>
+          <li>Store response in a flow variable: <code>workflow.matchResult</code></li>
+          <li>Add a <strong>Text</strong> node that says: <code>{{workflow.matchResult.message}}</code></li>
+          <li>If <code>matched = false</code>, route to a "We'll notify you" message node</li>
+          <li>Deploy your FastAPI backend publicly (use <strong>ngrok</strong> for testing or deploy to Railway/Render)</li>
+        </ol>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="dot" style="background:var(--accent3)"></span>Botpress Execute Code Sample</div>
+        <div class="code-block" style="font-size:11px;">
+const response = await axios.post(<br>
+&nbsp;&nbsp;'https://your-api.com/botpress-webhook',<br>
+&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ngo_name: workflow.ngoName,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;people_count: workflow.peopleCount,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;location: workflow.location,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;contact: workflow.contact,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;food_preference: workflow.preference<br>
+&nbsp;&nbsp;}<br>
+);<br>
+workflow.matchResult = response.data;
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div class="toast" id="toast"><span class="toast-icon">✓</span><span id="toast-msg"></span></div>
+
+<script>
+const API = 'http://localhost:8000';
+
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'donate') loadDonations();
+  if (name === 'request') loadRequests();
+  if (name === 'matches') loadMatches();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function statusBadge(s) {
+  if (s === 'available') return '<span class="badge badge-green">Available</span>';
+  if (s === 'matched') return '<span class="badge badge-yellow">Matched</span>';
+  if (s === 'pending') return '<span class="badge badge-orange">Pending</span>';
+  return `<span class="badge badge-red">${s}</span>`;
+}
+
+async function loadDashboard() {
+  try {
+    const r = await fetch(API + '/dashboard-stats');
+    const d = await r.json();
+    document.getElementById('stat-donations').textContent = d.total_donations;
+    document.getElementById('stat-kg').textContent = d.total_kg_donated;
+    document.getElementById('stat-matches').textContent = d.matches_made;
+    document.getElementById('stat-meals').textContent = d.meals_saved_estimate;
+
+    const don = await fetch(API + '/donations').then(r => r.json());
+    const req = await fetch(API + '/requests').then(r => r.json());
+
+    const dt = document.getElementById('dash-donations');
+    dt.innerHTML = don.slice(-5).reverse().map(d =>
+      `<tr><td>${d.restaurant_name}</td><td>${d.food_type}</td><td>${d.quantity_kg}kg</td><td>${statusBadge(d.status)}</td></tr>`
+    ).join('') || '<tr><td colspan="4" class="empty-state">No donations yet</td></tr>';
+
+    const rt = document.getElementById('dash-requests');
+    rt.innerHTML = req.slice(-5).reverse().map(r =>
+      `<tr><td>${r.ngo_name}</td><td>${r.people_count}</td><td>${r.location}</td><td>${statusBadge(r.status)}</td></tr>`
+    ).join('') || '<tr><td colspan="4" class="empty-state">No requests yet</td></tr>';
+  } catch(e) {
+    console.warn('API not connected, showing demo data');
+    document.getElementById('stat-donations').textContent = '—';
+  }
+}
+
+async function submitDonation() {
+  const btn = document.getElementById('donate-btn');
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  btn.disabled = true;
+  const data = {
+    restaurant_name: document.getElementById('d-name').value || 'Demo Restaurant',
+    contact: document.getElementById('d-contact').value || '9876543210',
+    food_type: document.getElementById('d-food').value || 'Rice and Dal',
+    quantity_kg: parseFloat(document.getElementById('d-qty').value) || 10,
+    prepared_at: document.getElementById('d-time').value || new Date().toISOString().slice(0,16),
+    location: document.getElementById('d-loc').value || 'Pune'
+  };
+  try {
+    const r = await fetch(API + '/donate', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    const res = await r.json();
+    const box = document.getElementById('donate-ai-result');
+    document.getElementById('donate-ai-text').textContent = res.analysis;
+    box.classList.add('show');
+    showToast('Donation registered! AI analysis ready.');
+    loadDonations();
+  } catch(e) {
+    showToast('Start backend: python main.py');
+  }
+  btn.innerHTML = 'Register Donation';
+  btn.disabled = false;
+}
+
+async function submitRequest() {
+  const btn = document.getElementById('request-btn');
+  btn.innerHTML = '<span class="spinner"></span> Submitting...';
+  btn.disabled = true;
+  const data = {
+    ngo_name: document.getElementById('r-name').value || 'Demo NGO',
+    people_count: parseInt(document.getElementById('r-people').value) || 50,
+    location: document.getElementById('r-loc').value || 'Pune',
+    contact: document.getElementById('r-contact').value || '9876543210',
+    food_preference: document.getElementById('r-pref').value
+  };
+  try {
+    await fetch(API + '/request', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    showToast('Request submitted! Auto-matching in progress.');
+    loadRequests();
+  } catch(e) {
+    showToast('Start backend: python main.py');
+  }
+  btn.innerHTML = 'Submit Request';
+  btn.disabled = false;
+}
+
+async function runPrediction() {
+  const btn = document.getElementById('predict-btn');
+  btn.innerHTML = '<span class="spinner"></span> Predicting...';
+  btn.disabled = true;
+  const name = document.getElementById('p-name').value || 'Hotel Shreyas';
+  const day = document.getElementById('p-day').value;
+  const meal = document.getElementById('p-meal').value;
+  try {
+    const r = await fetch(`${API}/predict-waste?restaurant=${encodeURIComponent(name)}&day=${day}&meal_type=${meal}`);
+    const d = await r.json();
+    document.getElementById('p-waste').textContent = (d.predicted_waste_kg || '?') + ' kg';
+    document.getElementById('p-conf').textContent = d.confidence || '—';
+    document.getElementById('p-hours').textContent = d.peak_hours || '—';
+    document.getElementById('p-suggest').textContent = d.suggestion || d.raw_response || '—';
+    document.getElementById('predict-output').style.display = 'block';
+  } catch(e) {
+    showToast('Start backend: python main.py');
+  }
+  btn.innerHTML = 'Run AI Prediction';
+  btn.disabled = false;
+}
+
+async function loadDonations() {
+  try {
+    const r = await fetch(API + '/donations');
+    const data = await r.json();
+    const t = document.getElementById('all-donations-table');
+    t.innerHTML = data.map(d =>
+      `<tr><td>${d.restaurant_name}</td><td>${d.food_type}</td><td>${d.quantity_kg}kg</td><td>${statusBadge(d.status)}</td></tr>`
+    ).join('') || '<tr><td colspan="4" class="empty-state">No donations</td></tr>';
+  } catch(e) {}
+}
+
+async function loadRequests() {
+  try {
+    const r = await fetch(API + '/requests');
+    const data = await r.json();
+    const t = document.getElementById('all-requests-table');
+    t.innerHTML = data.map(r =>
+      `<tr><td>${r.ngo_name}</td><td>${r.people_count}</td><td>${r.location}</td><td>${statusBadge(r.status)}</td></tr>`
+    ).join('') || '<tr><td colspan="4" class="empty-state">No requests</td></tr>';
+  } catch(e) {}
+}
+
+async function loadMatches() {
+  try {
+    const r = await fetch(API + '/matches');
+    const data = await r.json();
+    const c = document.getElementById('matches-container');
+    if (!data.length) {
+      c.innerHTML = '<div class="empty-state"><div class="empty-icon">🤝</div>No matches yet.</div>';
+      return;
+    }
+    c.innerHTML = data.map(m => `
+      <div class="match-card">
+        <div class="match-icon">🍱</div>
+        <div class="match-details">
+          <div class="match-title">${m.restaurant} → ${m.ngo}</div>
+          <div class="match-meta">${m.food} • ${m.quantity_kg}kg • Match #${m.match_id}</div>
+        </div>
+        <div class="match-arrow">→</div>
+        <span class="badge badge-green">Matched</span>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+// Init
+loadDashboard();
+setInterval(loadDashboard, 15000);
+</script>
+</body>
+</html>
